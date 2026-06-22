@@ -81,7 +81,21 @@ app.get("/compendium", (req, res) => {
     FROM pulls
     WHERE username = ?
     GROUP BY item
-    ORDER BY MIN(id)
+    ORDER BY
+  CASE item
+    WHEN '❤️🐶' THEN 1
+    WHEN '❤️🐱' THEN 2
+    WHEN '🧡🐰' THEN 3
+    WHEN '🧡🐸' THEN 4
+    WHEN '💛🦊' THEN 5
+    WHEN '💛🐺' THEN 6
+    WHEN '💚🐻' THEN 7
+    WHEN '💚🦁' THEN 8
+    WHEN '💙🦅' THEN 9
+    WHEN '💙🦉' THEN 10
+    WHEN '💜🐉' THEN 11
+    WHEN '🩷👰🏻‍♀️' THEN 12
+  END
   `).all(username);
 
   if (rows.length === 0) {
