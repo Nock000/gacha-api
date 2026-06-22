@@ -1,0 +1,4 @@
+node_modules/
+gacha.db
+*.db
+.env
