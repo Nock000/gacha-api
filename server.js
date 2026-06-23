@@ -2,7 +2,12 @@ const express = require("express");
 const Database = require("better-sqlite3");
 
 const app = express();
-const db = new Database("gacha.db");
+const dbPath =
+  process.env.RAILWAY_ENVIRONMENT
+    ? "/data/gacha.db"
+    : "./gacha.db";
+
+const db = new Database(dbPath);
 
 db.prepare(`
   CREATE TABLE IF NOT EXISTS pulls (
