@@ -3,6 +3,14 @@ const Database = require("better-sqlite3");
 
 const API_KEY = process.env.API_KEY;
 
+const BLOCKED_USERS = [
+  // "exampleuser"
+];
+
+function isBlocked(username) {
+  return BLOCKED_USERS.includes(username.toLowerCase());
+}
+
 const app = express();
 const dbPath =
   process.env.RAILWAY_ENVIRONMENT
@@ -71,6 +79,10 @@ app.get("/gacha", (req, res) => {
 
   const username = cleanUsername(req.query.user);
 
+if (isBlocked(username)) {
+  return res.send("Access denied.");
+}
+
   if (!username) {
     return res.send("Missing username.");
   }
@@ -88,6 +100,11 @@ app.get("/compendium", (req, res) => {
   }
 
   const username = cleanUsername(req.query.user);
+
+if (isBlocked(username)) {
+  return res.send("Access denied.");
+}
+
 
   if (!username) {
     return res.send("Missing username.");
@@ -134,6 +151,11 @@ app.get("/10pull", (req, res) => {
 
   const username = cleanUsername(req.query.user);
 
+if (isBlocked(username)) {
+  return res.send("Access denied.");
+}
+
+
   if (!username) {
     return res.send("Missing username.");
   }
@@ -166,6 +188,11 @@ app.get("/showcase", (req, res) => {
   }
 
   const username = cleanUsername(req.query.user);
+
+if (isBlocked(username)) {
+  return res.send("Access denied.");
+}
+
 
   if (!username) {
     return res.send("Missing username.");
@@ -200,6 +227,11 @@ app.get("/pulls", (req, res) => {
   }
 
   const username = cleanUsername(req.query.user);
+
+if (isBlocked(username)) {
+  return res.send("Access denied.");
+}
+
 
   if (!username) {
     return res.send("Missing username.");
