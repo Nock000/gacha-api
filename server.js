@@ -8,7 +8,26 @@ const BLOCKED_USERS = [
 ];
 
 function isBlocked(username) {
-  return BLOCKED_USERS.includes(username.toLowerCase());
+  return username &&
+         BLOCKED_USERS.includes(username.toLowerCase());
+}
+
+const cooldowns = {};
+
+function onCooldown(username, command, cooldownMs) {
+  const key = `${username.toLowerCase()}:${command}`;
+
+  const now = Date.now();
+
+  if (
+    cooldowns[key] &&
+    now - cooldowns[key] < cooldownMs
+  ) {
+    return true;
+  }
+
+  cooldowns[key] = now;
+  return false;
 }
 
 const app = express();
@@ -87,6 +106,12 @@ if (isBlocked(username)) {
     return res.send("Missing username.");
   }
 
+if (onCooldown(username, "gacha", 120000)) {
+  return res.send(
+    `@${username}, please wait before using !gacha again.`
+  );
+}
+
   const item = pullItem();
   savePull(username, item, "gacha");
 
@@ -159,6 +184,12 @@ if (isBlocked(username)) {
   if (!username) {
     return res.send("Missing username.");
   }
+
+if (onCooldown(username, "10pull", 86400000)) {
+  return res.send(
+    `@${username}, you have already used today's !10pull.`
+  );
+}
 
   const results = [];
 
