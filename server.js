@@ -1,6 +1,8 @@
 const express = require("express");
 const Database = require("better-sqlite3");
 
+const API_KEY = process.env.API_KEY;
+
 const app = express();
 const dbPath =
   process.env.RAILWAY_ENVIRONMENT
@@ -62,6 +64,11 @@ app.get("/", (req, res) => {
 });
 
 app.get("/gacha", (req, res) => {
+
+  if (req.query.key !== API_KEY) {
+    return res.send("Unauthorized");
+  }
+
   const username = cleanUsername(req.query.user);
 
   if (!username) {
@@ -75,6 +82,11 @@ app.get("/gacha", (req, res) => {
 });
 
 app.get("/compendium", (req, res) => {
+
+  if (req.query.key !== API_KEY) {
+    return res.send("Unauthorized");
+  }
+
   const username = cleanUsername(req.query.user);
 
   if (!username) {
@@ -115,6 +127,11 @@ app.get("/compendium", (req, res) => {
 });
 
 app.get("/10pull", (req, res) => {
+
+  if (req.query.key !== API_KEY) {
+    return res.send("Unauthorized");
+  }
+
   const username = cleanUsername(req.query.user);
 
   if (!username) {
@@ -143,6 +160,11 @@ const showcaseItems = [
 ];
 
 app.get("/showcase", (req, res) => {
+
+  if (req.query.key !== API_KEY) {
+    return res.send("Unauthorized");
+  }
+
   const username = cleanUsername(req.query.user);
 
   if (!username) {
@@ -172,6 +194,11 @@ app.get("/showcase", (req, res) => {
 });
 
 app.get("/pulls", (req, res) => {
+
+  if (req.query.key !== API_KEY) {
+    return res.send("Unauthorized");
+  }
+
   const username = cleanUsername(req.query.user);
 
   if (!username) {
