@@ -249,6 +249,7 @@ const BANNERS = {
     ]
   }
 };
+
 const ITEMS_BY_ID = {};
 let catalogOrder = 0;
 
@@ -342,6 +343,16 @@ db.prepare(`
   )
 `).run();
 
+db.prepare(`
+  CREATE TABLE IF NOT EXISTS pity (
+    username TEXT NOT NULL,
+    banner_id TEXT NOT NULL,
+    purple_pity INTEGER DEFAULT 0,
+    pink_pity INTEGER DEFAULT 0,
+    PRIMARY KEY (username, banner_id)
+  )
+`).run();
+
 function getSetting(key) {
   const row = db.prepare(`
     SELECT value
@@ -371,6 +382,8 @@ if (
 ) {
   const resetBetaData = db.transaction(() => {
     db.prepare(`DELETE FROM pulls`).run();
+
+db.prepare(`DELETE FROM pity`).run();
 
     setSetting("active_banner", "standard");
     setSetting("last_reset_version", RESET_VERSION);
@@ -432,11 +445,115 @@ function isGachaPaused() {
   return getSetting("gacha_paused") === "on";
 }
 
-function pullItem(bannerId) {
+function getPity(username, bannerId) {
+  let row = db.prepare(`
+    SELECT purple_pity, pink_pity
+    FROM pity
+    WHERE username = ? AND banner_id = ?
+  `).get(username, bannerId);
+
+  if (!row) {
+    db.prepare(`
+      INSERT INTO pity (username, banner_id, purple_pity, pink_pity)
+      VALUES (?, ?, 0, 0)
+    `).run(username, bannerId);
+
+    row = { purple_pity: 0, pink_pity: 0 };
+  }
+
+  return row;
+}
+
+function savePity(username, bannerId, purplePity, pinkPity) {
+  db.prepare(`
+    INSERT INTO pity (username, banner_id, purple_pity, pink_pity)
+    VALUES (?, ?, ?, ?)
+    ON CONFLICT(username, banner_id)
+    DO UPDATE SET
+      purple_pity = excluded.purple_pity,
+      pink_pity = excluded.pink_pity
+  `).run(username, bannerId, purplePity, pinkPity);
+}
+
+function bannerHasPurple(bannerId) {
+  return BANNERS[bannerId].items.some(item => item.tier === 6);
+}
+
+function bannerHasPink(bannerId) {
+  return BANNERS[bannerId].items.some(item => item.tier === 7);
+}
+
+function updatePityAfterPull(username, bannerId, item) {
+  const pity = getPity(username, bannerId);
+
+  let purplePity = bannerHasPurple(bannerId)
+    ? pity.purple_pity + 1
+    : 0;
+
+  let pinkPity = bannerHasPink(bannerId)
+    ? pity.pink_pity + 1
+    : 0;
+
+  if (item.tier === 6) {
+    purplePity = 0;
+  }
+
+  if (item.tier === 7) {
+    purplePity = 0;
+    pinkPity = 0;
+  }
+
+  savePity(username, bannerId, purplePity, pinkPity);
+}
+
+function weightedChoice(weightedItems) {
+  const totalWeight = weightedItems.reduce(
+    (total, entry) => total + entry.weight,
+    0
+  );
+
+  let roll = Math.random() * totalWeight;
+
+  for (const entry of weightedItems) {
+    roll -= entry.weight;
+
+    if (roll < 0) {
+      return entry.item;
+    }
+  }
+
+  return weightedItems[0].item;
+}
+
+function pullItem(bannerId, options = {}) {
   const items = BANNERS[bannerId].items;
   const hypeActive = isHypeActive();
 
-  const weightedItems = items.map(item => {
+  if (options.forcePurple) {
+    const purpleItems = items.filter(item => item.tier === 6);
+
+    return purpleItems[
+      Math.floor(Math.random() * purpleItems.length)
+    ];
+  }
+
+  const pinkItems = items.filter(item => item.tier === 7);
+
+  if (
+    options.pinkBoost &&
+    pinkItems.length > 0 &&
+    Math.random() < 0.05
+  ) {
+    return pinkItems[
+      Math.floor(Math.random() * pinkItems.length)
+    ];
+  }
+
+  const eligibleItems = options.pinkBoost
+    ? items.filter(item => item.tier !== 7)
+    : items;
+
+  const weightedItems = eligibleItems.map(item => {
     let multiplier = 1;
 
     if (hypeActive && item.tier === 6) {
@@ -453,22 +570,7 @@ function pullItem(bannerId) {
     };
   });
 
-  const totalWeight = weightedItems.reduce(
-    (total, entry) => total + entry.weight,
-    0
-  );
-
-  let roll = Math.random() * totalWeight;
-
-  for (const entry of weightedItems) {
-    roll -= entry.weight;
-
-    if (roll < 0) {
-      return entry.item;
-    }
-  }
-
-  return items[0];
+  return weightedChoice(weightedItems);
 }
 
 function itemCompact(itemId, fallbackItem) {
@@ -542,10 +644,17 @@ if (isGachaPaused() && !isAdmin(username)) {
     );
   }
 
-  const item = pullItem(getActiveBannerId());
+const bannerId = getActiveBannerId();
+const pity = getPity(username, bannerId);
+
+const item = pullItem(bannerId, {
+  forcePurple: bannerHasPurple(bannerId) && pity.purple_pity >= 149,
+  pinkBoost: bannerHasPink(bannerId) && pity.pink_pity >= 300
+});
 
 if (!isDeveloperModeActive(username)) {
   savePull(username, item, "gacha");
+  updatePityAfterPull(username, bannerId, item);
 }
 
   res.send(
@@ -577,13 +686,20 @@ if (isGachaPaused() && !isAdmin(username)) {
   const bannerId = getActiveBannerId();
 
   for (let i = 0; i < 10; i++) {
-    const item = pullItem(bannerId);
+    const pity = getPity(username, bannerId);
 
-    results.push(item.compact);
+const item = pullItem(bannerId, {
+  forcePurple: bannerHasPurple(bannerId) && pity.purple_pity >= 149,
+  pinkBoost: bannerHasPink(bannerId) && pity.pink_pity >= 300
+});
 
-    if (!isDeveloperModeActive(username)) {
+results.push(item.compact);
+
+if (!isDeveloperModeActive(username)) {
   savePull(username, item, "tenpull");
+  updatePityAfterPull(username, bannerId, item);
 }
+
   }
 
   res.send(
