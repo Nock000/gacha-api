@@ -1,6 +1,7 @@
 const express = require("express");
 const Database = require("better-sqlite3");
-
+const fs = require("fs");
+const path = require("path");
 const API_KEY = process.env.API_KEY;
 const ADMIN_KEY = process.env.ADMIN_KEY;
 const RESET_VERSION = process.env.RESET_VERSION || "";
@@ -843,55 +844,7 @@ app.get("/banner", (req, res) => {
 
 });
 
-app.get("/chronicle", (req, res) => {
-  res.send(`
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Sanctuary Chronicle</title>
-  <style>
-    body {
-      font-family: Georgia, serif;
-      max-width: 800px;
-      margin: 40px auto;
-      padding: 0 20px;
-      background: #f7f0df;
-      color: #2f2418;
-      line-height: 1.6;
-    }
-    h1 {
-      text-align: center;
-    }
-    .entry {
-      background: #fff8e7;
-      border: 1px solid #d8c7a3;
-      border-radius: 10px;
-      padding: 16px;
-      margin: 16px 0;
-    }
-    .muted {
-      color: #7a6a55;
-      text-align: center;
-    }
-  </style>
-</head>
-<body>
-  <h1>📖 Sanctuary Chronicle</h1>
-  <p class="muted">A record of notable discoveries and events.</p>
 
-  <div class="entry">
-    <strong>📜 Chronicle Opened</strong>
-    <p>The Sanctuary Chronicle has been established.</p>
-  </div>
-
-  <div class="entry">
-    <strong>Coming Soon</strong>
-    <p>First discoveries, unlocks, milestones, and special events will be recorded here.</p>
-  </div>
-</body>
-</html>
-  `);
-});
 
 app.get("/setbanner", (req, res) => {
   if (!requireApiKey(req, res)) return;
@@ -1061,6 +1014,10 @@ app.get("/gacharesume", (req, res) => {
   setSetting("gacha_paused", "off");
 
   res.send("Gacha resumed.");
+});
+
+app.get("/chronicle", (req, res) => {
+  res.sendFile(path.join(__dirname, "chronicle.html"));
 });
 
 const PORT = process.env.PORT || 3000;
