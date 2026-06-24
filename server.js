@@ -664,22 +664,22 @@ app.get("/setbanner", (req, res) => {
   if (!requireApiKey(req, res)) return;
 
   const admin = getAdminOrReply(req, res);
-
   if (!admin) return;
 
-const banner = (req.query.banner || "").trim().toLowerCase();
+  const banner = (req.query.banner || "").trim().toLowerCase();
 
-if (!banner) {
-  return res.send("Please specify a banner.");
-}
+  if (!banner) {
+    return res.send("Please specify a banner.");
+  }
 
-if (!BANNERS[banner]) {
-  return res.send("Unknown banner.");
-}
-  setSetting("active_banner", bannerId);
+  if (!BANNERS[banner]) {
+    return res.send("Unknown banner.");
+  }
+
+  setSetting("active_banner", banner);
 
   res.send(
-    `@${admin} set the active banner to ${BANNERS[bannerId].name}.`
+    `@${admin} set the active banner to ${BANNERS[banner].name}.`
   );
 });
 
