@@ -428,6 +428,10 @@ function isDeveloperModeActive(username) {
   );
 }
 
+function isGachaPaused() {
+  return getSetting("gacha_paused") === "on";
+}
+
 function pullItem(bannerId) {
   const items = BANNERS[bannerId].items;
   const hypeActive = isHypeActive();
@@ -525,6 +529,10 @@ app.get("/gacha", (req, res) => {
 
   if (!username) return;
 
+if (isGachaPaused() && !isAdmin(username)) {
+  return res.send("Gacha is currently paused.");
+}
+
   if (
     !isAdmin(username) &&
     onCooldown(username, "gacha", 120000)
@@ -551,6 +559,10 @@ app.get("/10pull", (req, res) => {
   const username = getUsernameOrReply(req, res);
 
   if (!username) return;
+
+if (isGachaPaused() && !isAdmin(username)) {
+  return res.send("Gacha is currently paused.");
+}
 
   if (
     !isAdmin(username) &&
@@ -760,6 +772,27 @@ app.get("/developeroff", (req, res) => {
   res.send("Developer mode disabled.");
 });
 
+app.get("/gachapause", (req, res) => {
+  if (!requireApiKey(req, res)) return;
+
+  const admin = getAdminOrReply(req, res);
+  if (!admin) return;
+
+  setSetting("gacha_paused", "on");
+
+  res.send("Gacha paused.");
+});
+
+app.get("/gacharesume", (req, res) => {
+  if (!requireApiKey(req, res)) return;
+
+  const admin = getAdminOrReply(req, res);
+  if (!admin) return;
+
+  setSetting("gacha_paused", "off");
+
+  res.send("Gacha resumed.");
+});
 
 const PORT = process.env.PORT || 3000;
 
