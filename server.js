@@ -421,6 +421,13 @@ function isHypeActive() {
   return getSetting("hype_mode") === "on";
 }
 
+function isDeveloperModeActive(username) {
+  return (
+    username === "inanks000" &&
+    getSetting("developer_mode_inanks000") === "on"
+  );
+}
+
 function pullItem(bannerId) {
   const items = BANNERS[bannerId].items;
   const hypeActive = isHypeActive();
@@ -529,7 +536,9 @@ app.get("/gacha", (req, res) => {
 
   const item = pullItem(getActiveBannerId());
 
+if (!isDeveloperModeActive(username)) {
   savePull(username, item, "gacha");
+}
 
   res.send(
     `@${username} pulled ${item.display}`
@@ -560,7 +569,9 @@ app.get("/10pull", (req, res) => {
 
     results.push(item.compact);
 
-    savePull(username, item, "tenpull");
+    if (!isDeveloperModeActive(username)) {
+  savePull(username, item, "tenpull");
+}
   }
 
   res.send(
@@ -726,6 +737,29 @@ app.get("/hypeoff", (req, res) => {
 
   res.send("Hype mode disabled.");
 });
+
+app.get("/developeron", (req, res) => {
+  if (!requireApiKey(req, res)) return;
+
+  const admin = getAdminOrReply(req, res);
+  if (!admin) return;
+
+  setSetting("developer_mode_inanks000", "on");
+
+  res.send("Developer mode enabled.");
+});
+
+app.get("/developeroff", (req, res) => {
+  if (!requireApiKey(req, res)) return;
+
+  const admin = getAdminOrReply(req, res);
+  if (!admin) return;
+
+  setSetting("developer_mode_inanks000", "off");
+
+  res.send("Developer mode disabled.");
+});
+
 
 const PORT = process.env.PORT || 3000;
 
