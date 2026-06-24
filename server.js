@@ -532,7 +532,7 @@ app.get("/gacha", (req, res) => {
   savePull(username, item, "gacha");
 
   res.send(
-    `@${username} discovered ${item.display}`
+    `@${username} pulled ${item.display}`
   );
 });
 
