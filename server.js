@@ -866,6 +866,87 @@ app.get("/setbanner", (req, res) => {
   );
 });
 
+app.get("/transfer", (req, res) => {
+  if (!requireApiKey(req, res)) return;
+
+  const admin = getAdminOrReply(req, res);
+  if (!admin) return;
+
+if (admin !== "inanks000") {
+  return res.send("Owner access required.");
+}
+
+  const oldUsername = cleanUsername(req.query.old);
+  const newUsername = cleanUsername(req.query.new);
+
+  if (!oldUsername || !newUsername) {
+    return res.send("Usage: !transfer oldname newname");
+  }
+
+  if (oldUsername === newUsername) {
+    return res.send("Old username and new username are the same.");
+  }
+
+  const transferData = db.transaction(() => {
+    const oldPulls = db.prepare(`
+      SELECT COUNT(*) AS count
+      FROM pulls
+      WHERE username = ?
+    `).get(oldUsername).count;
+
+    const oldPityRows = db.prepare(`
+      SELECT COUNT(*) AS count
+      FROM pity
+      WHERE username = ?
+    `).get(oldUsername).count;
+
+    if (oldPulls === 0 && oldPityRows === 0) {
+      return {
+        transferred: false,
+        reason: "not_found"
+      };
+    }
+
+    db.prepare(`
+      UPDATE pulls
+      SET username = ?
+      WHERE username = ?
+    `).run(newUsername, oldUsername);
+
+    db.prepare(`
+      INSERT INTO pity (username, banner_id, purple_pity, pink_pity)
+      SELECT ?, banner_id, purple_pity, pink_pity
+      FROM pity
+      WHERE username = ?
+      ON CONFLICT(username, banner_id)
+      DO UPDATE SET
+        purple_pity = MAX(pity.purple_pity, excluded.purple_pity),
+        pink_pity = MAX(pity.pink_pity, excluded.pink_pity)
+    `).run(newUsername, oldUsername);
+
+    db.prepare(`
+      DELETE FROM pity
+      WHERE username = ?
+    `).run(oldUsername);
+
+    return {
+      transferred: true,
+      pulls: oldPulls,
+      pityRows: oldPityRows
+    };
+  });
+
+  const result = transferData();
+
+  if (!result.transferred) {
+    return res.send(`No data found for ${oldUsername}.`);
+  }
+
+  res.send(
+    `Transferred ${oldUsername} to ${newUsername}: ${result.pulls} pulls and ${result.pityRows} pity records.`
+  );
+});
+
 app.get("/hypeon", (req, res) => {
   if (!requireApiKey(req, res)) return;
 
