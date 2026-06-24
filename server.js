@@ -667,18 +667,15 @@ app.get("/setbanner", (req, res) => {
 
   if (!admin) return;
 
-  const bannerId = (
-    req.query.banner || ""
-  ).trim().toLowerCase();
+const banner = (req.query.banner || "").trim().toLowerCase();
 
- if (!banner) {
+if (!banner) {
   return res.send("Please specify a banner.");
 }
 
 if (!BANNERS[banner]) {
   return res.send("Unknown banner.");
 }
-
   setSetting("active_banner", bannerId);
 
   res.send(
