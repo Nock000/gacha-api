@@ -117,6 +117,107 @@ db.prepare(`
   )
 `).run();
 
+db.prepare(`
+CREATE TABLE IF NOT EXISTS chronicle_entries (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  category TEXT NOT NULL,
+  title TEXT NOT NULL,
+  message TEXT NOT NULL,
+  username TEXT,
+  item_id TEXT,
+  banner_id TEXT,
+  announced INTEGER DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+)
+`).run();
+
+const chronicleCount = db.prepare(`
+  SELECT COUNT(*) AS count
+  FROM chronicle_entries
+`).get().count;
+
+if (chronicleCount === 0) {
+  db.prepare(`
+    INSERT INTO chronicle_entries (category, title, message)
+    VALUES (?, ?, ?)
+  `).run(
+    "history",
+    "Chronicle Opened",
+    "The Sanctuary Chronicle has been established."
+  );
+
+  db.prepare(`
+    INSERT INTO chronicle_entries (category, title, message)
+    VALUES (?, ?, ?)
+  `).run(
+    "threshold",
+    "Late Beta",
+    "The Sanctuary entered late beta with persistent records, banners, pity, and the Chronicle."
+  );
+}
+
+function escapeHtml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function renderChroniclePage(pageTitle, entries) {
+  const entryHtml = entries.length
+    ? entries.map(entry => `
+      <div class="section">
+        <h2>${escapeHtml(entry.title)}</h2>
+        <p>${escapeHtml(entry.message)}</p>
+        <p class="muted">${escapeHtml(entry.category)} · ${escapeHtml(entry.created_at)}</p>
+      </div>
+    `).join("")
+    : `
+      <div class="section">
+        <h2>No records yet.</h2>
+        <p class="muted">This section of the Chronicle is waiting for its first entry.</p>
+      </div>
+    `;
+
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${escapeHtml(pageTitle)} - Sanctuary Chronicle</title>
+  <link rel="stylesheet" href="/chronicle.css" />
+</head>
+
+<body>
+  <h1>📜 Sanctuary Chronicle</h1>
+
+  <div class="subtitle">
+    ${escapeHtml(pageTitle)}
+  </div>
+
+  <nav>
+    <a href="/chronicle">Home</a>
+    <a href="/chronicle/latest">Latest Records</a>
+    <a href="/chronicle/discoveries">Discoveries</a>
+    <a href="/chronicle/collections">Collections</a>
+    <a href="/chronicle/thresholds">Thresholds</a>
+    <a href="/chronicle/personnel">Personnel</a>
+    <a href="/chronicle/history">History</a>
+  </nav>
+
+  ${entryHtml}
+
+  <footer>
+    Sanctuary Chronicle · Established during late beta
+  </footer>
+</body>
+</html>
+  `;
+}
+
 function getSetting(key) {
   const row = db.prepare(`
     SELECT value
@@ -780,7 +881,13 @@ app.get("/gacharesume", (req, res) => {
 });
 
 app.get("/chronicle", (req, res) => {
-  res.sendFile(path.join(__dirname, "chronicle.html"));
+  const entries = db.prepare(`
+    SELECT *
+    FROM chronicle_entries
+    ORDER BY created_at DESC, id DESC
+  `).all();
+
+  res.send(renderChroniclePage("Latest Records", entries));
 });
 
 app.get("/chronicle/latest", (req, res) => {
