@@ -671,11 +671,13 @@ app.get("/setbanner", (req, res) => {
     req.query.banner || ""
   ).trim().toLowerCase();
 
-  if (!BANNERS[bannerId]) {
-    return res.send(
-      `Unknown banner. Available: ${Object.keys(BANNERS).join(", ")}`
-    );
-  }
+ if (!banner) {
+  return res.send("Please specify a banner.");
+}
+
+if (!BANNERS[banner]) {
+  return res.send("Unknown banner.");
+}
 
   setSetting("active_banner", bannerId);
 
