@@ -891,19 +891,46 @@ app.get("/chronicle", (req, res) => {
 });
 
 app.get("/chronicle/latest", (req, res) => {
-  res.sendFile(path.join(__dirname, "chronicle.html"));
+  const entries = db.prepare(`
+    SELECT *
+    FROM chronicle_entries
+    ORDER BY created_at DESC, id DESC
+  `).all();
+
+  res.send(renderChroniclePage("Latest Records", entries));
 });
 
 app.get("/chronicle/discoveries", (req, res) => {
-  res.sendFile(path.join(__dirname, "chronicle.html"));
+  const entries = db.prepare(`
+    SELECT *
+    FROM chronicle_entries
+    WHERE category = 'first_discovery'
+    ORDER BY created_at DESC, id DESC
+  `).all();
+
+  res.send(renderChroniclePage("First Discoveries", entries));
 });
 
 app.get("/chronicle/collections", (req, res) => {
-  res.sendFile(path.join(__dirname, "chronicle.html"));
+  const entries = db.prepare(`
+    SELECT *
+    FROM chronicle_entries
+    WHERE category = 'collection'
+    ORDER BY created_at DESC, id DESC
+  `).all();
+
+  res.send(renderChroniclePage("Collection Records", entries));
 });
 
 app.get("/chronicle/thresholds", (req, res) => {
-  res.sendFile(path.join(__dirname, "chronicle.html"));
+  const entries = db.prepare(`
+    SELECT *
+    FROM chronicle_entries
+    WHERE category = 'threshold'
+    ORDER BY created_at DESC, id DESC
+  `).all();
+
+  res.send(renderChroniclePage("Threshold Records", entries));
 });
 
 app.get("/chronicle/personnel", (req, res) => {
@@ -911,7 +938,14 @@ app.get("/chronicle/personnel", (req, res) => {
 });
 
 app.get("/chronicle/history", (req, res) => {
-  res.sendFile(path.join(__dirname, "chronicle.html"));
+  const entries = db.prepare(`
+    SELECT *
+    FROM chronicle_entries
+    WHERE category = 'history'
+    ORDER BY created_at DESC, id DESC
+  `).all();
+
+  res.send(renderChroniclePage("Sanctuary History", entries));
 });
 
 app.get("/chronicle.css", (req, res) => {
