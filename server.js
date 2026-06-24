@@ -419,19 +419,37 @@ function getActiveBannerId() {
 
 function pullItem(bannerId) {
   const items = BANNERS[bannerId].items;
+  const hypeActive = isHypeActive();
 
-  const totalWeight = items.reduce(
-    (total, item) => total + item.weight,
+  const weightedItems = items.map(item => {
+    let multiplier = 1;
+
+    if (hypeActive && item.tier === 6) {
+      multiplier = 2;
+    }
+
+    if (hypeActive && item.tier === 7) {
+      multiplier = 3;
+    }
+
+    return {
+      item,
+      weight: item.weight * multiplier
+    };
+  });
+
+  const totalWeight = weightedItems.reduce(
+    (total, entry) => total + entry.weight,
     0
   );
 
   let roll = Math.random() * totalWeight;
 
-  for (const item of items) {
-    roll -= item.weight;
+  for (const entry of weightedItems) {
+    roll -= entry.weight;
 
     if (roll < 0) {
-      return item;
+      return entry.item;
     }
   }
 
@@ -654,10 +672,10 @@ app.get("/banner", (req, res) => {
   if (!requireApiKey(req, res)) return;
 
   const bannerId = getActiveBannerId();
+ res.send(
+  `Active banner: ${BANNERS[bannerId].name}`
+);
 
-  res.send(
-    `Active banner: ${BANNERS[bannerId].name}`
-  );
 });
 
 app.get("/setbanner", (req, res) => {
@@ -681,6 +699,28 @@ app.get("/setbanner", (req, res) => {
   res.send(
     `@${admin} set the active banner to ${BANNERS[banner].name}.`
   );
+});
+
+app.get("/hypeon", (req, res) => {
+  if (!requireApiKey(req, res)) return;
+
+  const admin = getAdminOrReply(req, res);
+  if (!admin) return;
+
+  setSetting("hype_mode", "on");
+
+ res.send("Hype mode enabled.");
+});
+
+app.get("/hypeoff", (req, res) => {
+  if (!requireApiKey(req, res)) return;
+
+  const admin = getAdminOrReply(req, res);
+  if (!admin) return;
+
+  setSetting("hype_mode", "off");
+
+  res.send("Hype mode disabled.");
 });
 
 const PORT = process.env.PORT || 3000;
