@@ -807,6 +807,10 @@ app.get("/chronicle/history", (req, res) => {
   res.sendFile(path.join(__dirname, "chronicle.html"));
 });
 
+app.get("/chronicle.css", (req, res) => {
+  res.sendFile(path.join(__dirname, "chronicle.css"));
+});
+
 app.get("/chronicle-command", (req, res) => {
   if (!requireApiKey(req, res)) return;
 
