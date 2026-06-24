@@ -417,6 +417,10 @@ function getActiveBannerId() {
   return bannerId;
 }
 
+function isHypeActive() {
+  return getSetting("hype_mode") === "on";
+}
+
 function pullItem(bannerId) {
   const items = BANNERS[bannerId].items;
   const hypeActive = isHypeActive();
