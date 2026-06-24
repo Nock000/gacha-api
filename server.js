@@ -811,6 +811,28 @@ app.get("/pulls", (req, res) => {
   );
 });
 
+app.get("/pity", (req, res) => {
+  if (!requireApiKey(req, res)) return;
+
+  const username = getUsernameOrReply(req, res);
+  if (!username) return;
+
+  const bannerId = getActiveBannerId();
+  const pity = getPity(username, bannerId);
+
+  const purpleText = bannerHasPurple(bannerId)
+    ? `💜 ${pity.purple_pity} / 150`
+    : "💜 N/A";
+
+  const pinkText = bannerHasPink(bannerId)
+    ? `🩷 ${pity.pink_pity} / 300`
+    : "🩷 N/A";
+
+  res.send(
+    `@${username} pity on ${BANNERS[bannerId].name}: ${purpleText}, ${pinkText}`
+  );
+});
+
 app.get("/banner", (req, res) => {
   if (!requireApiKey(req, res)) return;
 
