@@ -783,6 +783,30 @@ app.get("/chronicle", (req, res) => {
   res.sendFile(path.join(__dirname, "chronicle.html"));
 });
 
+app.get("/chronicle/latest", (req, res) => {
+  res.sendFile(path.join(__dirname, "chronicle.html"));
+});
+
+app.get("/chronicle/discoveries", (req, res) => {
+  res.sendFile(path.join(__dirname, "chronicle.html"));
+});
+
+app.get("/chronicle/collections", (req, res) => {
+  res.sendFile(path.join(__dirname, "chronicle.html"));
+});
+
+app.get("/chronicle/thresholds", (req, res) => {
+  res.sendFile(path.join(__dirname, "chronicle.html"));
+});
+
+app.get("/chronicle/personnel", (req, res) => {
+  res.sendFile(path.join(__dirname, "chronicle.html"));
+});
+
+app.get("/chronicle/history", (req, res) => {
+  res.sendFile(path.join(__dirname, "chronicle.html"));
+});
+
 app.get("/chronicle-command", (req, res) => {
   if (!requireApiKey(req, res)) return;
 
