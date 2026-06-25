@@ -487,7 +487,7 @@ if (!isDeveloperModeActive(username)) {
     chronicle.record({
       category: "first_discovery",
       title: `First Discovery: ${item.name}`,
-      message: `${username} first discovered ${item.display}.`,
+      message: item.display,
       username,
       itemId: item.id,
       bannerId,
@@ -544,7 +544,7 @@ if (!isDeveloperModeActive(username)) {
     chronicle.record({
       category: "first_discovery",
       title: `First Discovery: ${item.name}`,
-      message: `${username} first discovered ${item.display}.`,
+      message: item.display,
       username,
       itemId: item.id,
       bannerId,
@@ -961,12 +961,13 @@ app.get("/pending", (req, res) => {
     return res.send("No pending Chronicle announcements.");
   }
 
-  const preview = pending
-    .slice(0, 3)
-    .map(entry => `#${entry.id}: ${entry.title}`)
-    .join(" | ");
+  const entry = pending[0];
 
-  res.send(`Pending Chronicle announcements: ${preview}`);
+  if (entry.category === "first_discovery") {
+    return res.send("Discovery!");
+  }
+
+  res.send(entry.title);
 });
 
 app.get("/announce", (req, res) => {
@@ -975,15 +976,15 @@ app.get("/announce", (req, res) => {
   const admin = getAdminOrReply(req, res);
   if (!admin) return;
 
- const entry = chronicle.announceNext();
+ const announcement = chronicle.announceNext();
 
-if (!entry) {
+if (!announcement) {
   return res.send("No pending Chronicle announcements.");
 }
 
-  res.send(
-    `📜 ${entry.title}: ${entry.message}`
-  );
+res.send(announcement);
+
+res.send(`📜 ${entry.title}: ${entry.message}`);
 });
 
 app.get("/chronicle-command", (req, res) => {

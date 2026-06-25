@@ -59,6 +59,14 @@ function getNextPending() {
   `).run(id);
 }
 
+function formatAnnouncement(entry) {
+  if (entry.category === "first_discovery") {
+    return `📜 ${entry.username} discovered ${entry.message}.`;
+  }
+
+  return `📜 ${entry.title}: ${entry.message}`;
+}
+
 function announceNext() {
   const entry = getNextPending();
 
@@ -68,7 +76,7 @@ function announceNext() {
 
   markAnnounced(entry.id);
 
-  return entry;
+  return formatAnnouncement(entry);
 }
 
   return {
