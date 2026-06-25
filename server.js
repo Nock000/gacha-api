@@ -19,6 +19,11 @@ const {
   renderPersonnelDirectory,
   renderPersonnelProfile
 } = require("./views/personnel");
+
+const {
+  renderChroniclePage
+} = require("./views/chronicle");
+
 const ITEMS_BY_ID = {};
 let catalogOrder = 0;
 
@@ -161,67 +166,6 @@ if (chronicleCount === 0) {
   );
 }
 
-function escapeHtml(value) {
-  return String(value || "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
-
-function renderChroniclePage(pageTitle, entries) {
-  const entryHtml = entries.length
-    ? entries.map(entry => `
-      <div class="section">
-        <h2>${escapeHtml(entry.title)}</h2>
-        <p>${escapeHtml(entry.message)}</p>
-        <p class="muted">${escapeHtml(entry.category)} · ${escapeHtml(entry.created_at)}</p>
-      </div>
-    `).join("")
-    : `
-      <div class="section">
-        <h2>No records yet.</h2>
-        <p class="muted">This section of the Chronicle is waiting for its first entry.</p>
-      </div>
-    `;
-
-  return `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>${escapeHtml(pageTitle)} - Sanctuary Chronicle</title>
-  <link rel="stylesheet" href="/chronicle.css" />
-</head>
-
-<body>
-  <h1>📜 Sanctuary Chronicle</h1>
-
-  <div class="subtitle">
-    ${escapeHtml(pageTitle)}
-  </div>
-
-  <nav>
-    <a href="/chronicle">Home</a>
-    <a href="/chronicle/latest">Latest Records</a>
-    <a href="/chronicle/discoveries">Discoveries</a>
-    <a href="/chronicle/collections">Collections</a>
-    <a href="/chronicle/thresholds">Thresholds</a>
-    <a href="/chronicle/personnel">Personnel</a>
-    <a href="/chronicle/history">History</a>
-  </nav>
-
-  ${entryHtml}
-
-  <footer>
-    Sanctuary Chronicle · Established during late beta
-  </footer>
-</body>
-</html>
-  `;
-}
 
 function getSetting(key) {
   const row = db.prepare(`
