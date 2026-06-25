@@ -937,13 +937,11 @@ app.get("/announce", (req, res) => {
   const admin = getAdminOrReply(req, res);
   if (!admin) return;
 
-  const entry = chronicle.getNextPending();
+ const entry = chronicle.announceNext();
 
-  if (!entry) {
-    return res.send("No pending Chronicle announcements.");
-  }
-
-  chronicle.markAnnounced(entry.id);
+if (!entry) {
+  return res.send("No pending Chronicle announcements.");
+}
 
   res.send(
     `📜 ${entry.title}: ${entry.message}`

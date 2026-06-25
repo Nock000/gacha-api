@@ -58,11 +58,25 @@ function getNextPending() {
     WHERE id = ?
   `).run(id);
 }
+
+function announceNext() {
+  const entry = getNextPending();
+
+  if (!entry) {
+    return null;
+  }
+
+  markAnnounced(entry.id);
+
+  return entry;
+}
+
   return {
     record,
     getPending,
     getNextPending,
-    markAnnounced
+    markAnnounced,
+    announceNext
   };
 }
 
