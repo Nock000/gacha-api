@@ -147,23 +147,21 @@ const chronicleCount = db.prepare(`
 `).get().count;
 
 if (chronicleCount === 0) {
-  db.prepare(`
-    INSERT INTO chronicle_entries (category, title, message)
-    VALUES (?, ?, ?)
-  `).run(
-    "history",
-    "Chronicle Opened",
-    "The Sanctuary Chronicle has been established."
-  );
 
-  db.prepare(`
-    INSERT INTO chronicle_entries (category, title, message)
-    VALUES (?, ?, ?)
-  `).run(
-    "threshold",
-    "Late Beta",
-    "The Sanctuary entered late beta with persistent records, banners, pity, and the Chronicle."
-  );
+    recordChronicleEntry({
+        category: "history",
+        title: "Chronicle Opened",
+        message: "The Sanctuary Chronicle has been established.",
+        announced: 1
+    });
+
+    recordChronicleEntry({
+        category: "threshold",
+        title: "Late Beta",
+        message: "The Sanctuary entered late beta with persistent records, banners, pity, and the Chronicle.",
+        announced: 1
+    });
+
 }
 
 
@@ -432,6 +430,39 @@ function getAdminOrReply(req, res) {
   }
 
   return username;
+}
+
+function recordChronicleEntry({
+  category,
+  title,
+  message,
+  username = null,
+  itemId = null,
+  bannerId = null,
+  announced = 0
+}) {
+  const result = db.prepare(`
+    INSERT INTO chronicle_entries (
+      category,
+      title,
+      message,
+      username,
+      item_id,
+      banner_id,
+      announced
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    category,
+    title,
+    message,
+    username,
+    itemId,
+    bannerId,
+    announced
+  );
+
+  return result.lastInsertRowid;
 }
 
 app.get("/", (req, res) => {
