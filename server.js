@@ -142,7 +142,7 @@ CREATE TABLE IF NOT EXISTS chronicle_entries (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 )
 `).run();
-
+ensureColumn("chronicle_entries", "channel", "TEXT DEFAULT 'general'");
 const chronicleCount = db.prepare(`
   SELECT COUNT(*) AS count
   FROM chronicle_entries
@@ -671,6 +671,19 @@ app.get("/pulls", (req, res) => {
 
   res.send(
     `@${username} has made ${row.count} pulls.`
+  );
+});
+
+app.get("/totalpulls", (req, res) => {
+  if (!requireApiKey(req, res)) return;
+
+  const row = db.prepare(`
+    SELECT COUNT(*) AS count
+    FROM pulls
+  `).get();
+
+  res.send(
+    `The Sanctuary has recorded ${row.count} total pulls.`
   );
 });
 
