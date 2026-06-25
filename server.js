@@ -233,6 +233,16 @@ function savePull(username, item, pullType) {
   );
 }
 
+function isFirstDiscovery(item) {
+  const row = db.prepare(`
+    SELECT COUNT(*) AS count
+    FROM pulls
+    WHERE item_id = ?
+  `).get(item.id);
+
+  return row.count === 0;
+}
+
 function getActiveBannerId() {
   const bannerId = getSetting("active_banner");
 
@@ -468,8 +478,22 @@ const item = pullItem(bannerId, {
 });
 
 if (!isDeveloperModeActive(username)) {
+  const firstDiscovery = isFirstDiscovery(item);
+
   savePull(username, item, "gacha");
   updatePityAfterPull(username, bannerId, item);
+
+  if (firstDiscovery) {
+    chronicle.record({
+      category: "first_discovery",
+      title: `First Discovery: ${item.name}`,
+      message: `${username} first discovered ${item.display}.`,
+      username,
+      itemId: item.id,
+      bannerId,
+      announced: 0
+    });
+  }
 }
 
   res.send(
@@ -511,8 +535,22 @@ const item = pullItem(bannerId, {
 results.push(item.compact);
 
 if (!isDeveloperModeActive(username)) {
+  const firstDiscovery = isFirstDiscovery(item);
+
   savePull(username, item, "tenpull");
   updatePityAfterPull(username, bannerId, item);
+
+  if (firstDiscovery) {
+    chronicle.record({
+      category: "first_discovery",
+      title: `First Discovery: ${item.name}`,
+      message: `${username} first discovered ${item.display}.`,
+      username,
+      itemId: item.id,
+      bannerId,
+      announced: 0
+    });
+  }
 }
 
   }
