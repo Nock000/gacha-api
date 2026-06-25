@@ -41,9 +41,28 @@ function createChronicleService(db) {
     `).all();
   }
 
+function getNextPending() {
+  return db.prepare(`
+    SELECT *
+    FROM chronicle_entries
+    WHERE announced = 0
+    ORDER BY created_at ASC, id ASC
+    LIMIT 1
+  `).get();
+  
+}
+  function markAnnounced(id) {
+  return db.prepare(`
+    UPDATE chronicle_entries
+    SET announced = 1
+    WHERE id = ?
+  `).run(id);
+}
   return {
     record,
-    getPending
+    getPending,
+    getNextPending,
+    markAnnounced
   };
 }
 

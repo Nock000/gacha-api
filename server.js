@@ -931,6 +931,25 @@ app.get("/pending", (req, res) => {
   res.send(`Pending Chronicle announcements: ${preview}`);
 });
 
+app.get("/announce", (req, res) => {
+  if (!requireApiKey(req, res)) return;
+
+  const admin = getAdminOrReply(req, res);
+  if (!admin) return;
+
+  const entry = chronicle.getNextPending();
+
+  if (!entry) {
+    return res.send("No pending Chronicle announcements.");
+  }
+
+  chronicle.markAnnounced(entry.id);
+
+  res.send(
+    `📜 ${entry.title}: ${entry.message}`
+  );
+});
+
 app.get("/chronicle-command", (req, res) => {
   if (!requireApiKey(req, res)) return;
 
