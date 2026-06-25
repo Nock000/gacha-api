@@ -14,6 +14,7 @@ const BLOCKED_USERS = [
 
 const BANNERS = require("./banners");
 const PERSONNEL = require("./personnel");
+const createChronicleService = require("./services/chronicle");
 
 const {
   renderPersonnelDirectory,
@@ -79,6 +80,7 @@ const dbPath =
     : "./gacha.db";
 
 const db = new Database(dbPath);
+const chronicle = createChronicleService(db);
 
 db.prepare(`
   CREATE TABLE IF NOT EXISTS pulls (
@@ -148,14 +150,14 @@ const chronicleCount = db.prepare(`
 
 if (chronicleCount === 0) {
 
-    recordChronicleEntry({
+    chronicle.record({
         category: "history",
         title: "Chronicle Opened",
         message: "The Sanctuary Chronicle has been established.",
         announced: 1
     });
 
-    recordChronicleEntry({
+    chronicle.record({
         category: "threshold",
         title: "Late Beta",
         message: "The Sanctuary entered late beta with persistent records, banners, pity, and the Chronicle.",
@@ -432,38 +434,6 @@ function getAdminOrReply(req, res) {
   return username;
 }
 
-function recordChronicleEntry({
-  category,
-  title,
-  message,
-  username = null,
-  itemId = null,
-  bannerId = null,
-  announced = 0
-}) {
-  const result = db.prepare(`
-    INSERT INTO chronicle_entries (
-      category,
-      title,
-      message,
-      username,
-      item_id,
-      banner_id,
-      announced
-    )
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-  `).run(
-    category,
-    title,
-    message,
-    username,
-    itemId,
-    bannerId,
-    announced
-  );
-
-  return result.lastInsertRowid;
-}
 
 app.get("/", (req, res) => {
   res.send("Gacha API is running!");
