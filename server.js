@@ -195,9 +195,19 @@ if (
   getSetting("last_reset_version") !== RESET_VERSION
 ) {
   const resetBetaData = db.transaction(() => {
-    db.prepare(`DELETE FROM pulls`).run();
 
+db.prepare(`DELETE FROM pulls`).run();
 db.prepare(`DELETE FROM pity`).run();
+db.prepare(`DELETE FROM chronicle_entries`).run();
+db.prepare(`DELETE FROM chronicle_entries`).run();
+
+chronicle.record({
+  category: "history",
+  title: "Chronicle Opened",
+  message: "The Sanctuary Chronicle has been established.",
+  announced: 1
+});
+
 
     setSetting("active_banner", "standard");
     setSetting("last_reset_version", RESET_VERSION);
