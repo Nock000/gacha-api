@@ -911,6 +911,26 @@ app.get("/chronicle.css", (req, res) => {
   res.sendFile(path.join(__dirname, "chronicle.css"));
 });
 
+app.get("/pending", (req, res) => {
+  if (!requireApiKey(req, res)) return;
+
+  const admin = getAdminOrReply(req, res);
+  if (!admin) return;
+
+  const pending = chronicle.getPending();
+
+  if (pending.length === 0) {
+    return res.send("No pending Chronicle announcements.");
+  }
+
+  const preview = pending
+    .slice(0, 3)
+    .map(entry => `#${entry.id}: ${entry.title}`)
+    .join(" | ");
+
+  res.send(`Pending Chronicle announcements: ${preview}`);
+});
+
 app.get("/chronicle-command", (req, res) => {
   if (!requireApiKey(req, res)) return;
 

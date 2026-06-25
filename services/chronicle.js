@@ -32,8 +32,18 @@ function createChronicleService(db) {
     return result.lastInsertRowid;
   }
 
+  function getPending() {
+    return db.prepare(`
+      SELECT *
+      FROM chronicle_entries
+      WHERE announced = 0
+      ORDER BY created_at ASC, id ASC
+    `).all();
+  }
+
   return {
-    record
+    record,
+    getPending
   };
 }
 
