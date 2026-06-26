@@ -307,6 +307,36 @@ function getActiveBannerId() {
   return bannerId;
 }
 
+function visibleProfileBannerIds() {
+  const today = new Date();
+
+  const schedule = [
+    { id: "standard", starts: "2026-06-28" },
+    { id: "bug", starts: "2026-08-01" },
+    { id: "anniversary", starts: "2026-09-01" },
+    { id: "halloween", starts: "2026-10-01" },
+    { id: "christmas", starts: "2026-12-01" },
+    { id: "ocean", starts: "2027-01-01" },
+    { id: "valentines", starts: "2027-02-01" },
+    { id: "spring", starts: "2027-03-01" },
+    { id: "woodland", starts: "2027-06-01" },
+    { id: "savannah", starts: "2027-07-01" },
+    { id: "jungle", starts: "2027-08-01" }
+  ];
+
+  const visible = schedule
+    .filter(entry => today >= new Date(`${entry.starts}T00:00:00`))
+    .map(entry => entry.id);
+
+  const activeBannerId = getActiveBannerId();
+
+  if (!visible.includes(activeBannerId)) {
+    visible.push(activeBannerId);
+  }
+
+  return visible;
+}
+
 function isHypeActive() {
   if (getSetting("hype_mode") !== "on") {
     return false;
@@ -640,7 +670,7 @@ app.get("/compendium", (req, res) => {
 
   if (rows.length === 0) {
     return res.send(
-      `@${username} has no ${BANNERS[bannerId].name} discoveries yet.`
+      `@${username} Compendium: Empty.`
     );
   }
 
@@ -1150,6 +1180,31 @@ app.get("/chronicle-command", (req, res) => {
   res.send(
     "📜 Sanctuary Chronicle: https://gacha-api-production.up.railway.app/chronicle"
   );
+});
+
+app.get("/profile", (req, res) => {
+  if (!requireApiKey(req, res)) return;
+
+  const username = getUsernameOrReply(req, res);
+  if (!username) return;
+
+  const bannerIds = visibleProfileBannerIds();
+
+  const parts = bannerIds.map(bannerId => {
+    const discovered = db.prepare(`
+      SELECT COUNT(DISTINCT item_id) AS count
+      FROM pulls
+      WHERE username = ?
+        AND banner_id = ?
+        AND item_id IS NOT NULL
+    `).get(username, bannerId).count;
+
+    const total = BANNERS[bannerId].items.length;
+
+    return `${BANNERS[bannerId].name} ${discovered}/${total}`;
+  });
+
+  res.send(`@${username}: ${parts.join(", ")}`);
 });
 
 const PORT = process.env.PORT || 3000;
