@@ -663,9 +663,9 @@ app.get("/compendium", (req, res) => {
     )
     .join(", ");
 
-  res.send(
-    `@${username} ${BANNERS[bannerId].name} Compendium: ${collection}`
-  );
+res.send(
+  `@${username}: ${collection}`
+);
 });
 
 app.get("/showcase", (req, res) => {
