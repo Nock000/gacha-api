@@ -15,6 +15,7 @@ const BLOCKED_USERS = [
 const BANNERS = require("./banners");
 const PERSONNEL = require("./personnel");
 const createChronicleService = require("./services/chronicle");
+const createCommunicationsService = require("./services/communications");
 
 const {
   renderPersonnelDirectory,
@@ -81,6 +82,11 @@ const dbPath =
 
 const db = new Database(dbPath);
 const chronicle = createChronicleService(db);
+const communications = createCommunicationsService({
+  db,
+  chronicle,
+  itemsById: ITEMS_BY_ID
+});
 
 db.prepare(`
   CREATE TABLE IF NOT EXISTS pulls (
@@ -494,15 +500,7 @@ if (!isDeveloperModeActive(username)) {
   updatePityAfterPull(username, bannerId, item);
 
   if (firstDiscovery) {
-    chronicle.record({
-      category: "first_discovery",
-      title: `First Discovery: ${item.name}`,
-      message: item.display,
-      username,
-      itemId: item.id,
-      bannerId,
-      announced: 0
-    });
+    communications.queueDiscovery(username, item, bannerId);
   }
 }
 
@@ -978,19 +976,9 @@ app.get("/pending", (req, res) => {
   const admin = getAdminOrReply(req, res);
   if (!admin) return;
 
-  const pending = chronicle.getPending();
-
-  if (pending.length === 0) {
-    return res.send("No pending Chronicle announcements.");
-  }
-
-  const entry = pending[0];
-
-  if (entry.category === "first_discovery") {
-    return res.send("Discovery!");
-  }
-
-  res.send(entry.title);
+  res.send(
+    communications.getPendingSummary()
+  );
 });
 
 app.get("/announce", (req, res) => {
@@ -999,15 +987,63 @@ app.get("/announce", (req, res) => {
   const admin = getAdminOrReply(req, res);
   if (!admin) return;
 
- const announcement = chronicle.announceNext();
+  const channel = req.query.channel;
 
-if (!announcement) {
-  return res.send("No pending Chronicle announcements.");
-}
+  const announcement = communications.announceNext(channel);
 
-res.send(announcement);
+  if (!announcement) {
+    return res.send("No pending Chronicle announcements.");
+  }
 
-res.send(`📜 ${entry.title}: ${entry.message}`);
+  res.send(announcement);
+});
+
+app.get("/cleartier1", (req, res) => {
+  if (!requireApiKey(req, res)) return;
+
+  const admin = getAdminOrReply(req, res);
+  if (!admin) return;
+
+  const cleared = communications.clearChannel("common");
+
+  if (cleared === null) {
+    return res.send("That channel cannot be cleared.");
+  }
+
+  res.send(`Cleared ${cleared} common discovery announcements.`);
+});
+
+app.get("/cleartier2", (req, res) => {
+  if (!requireApiKey(req, res)) return;
+
+  const admin = getAdminOrReply(req, res);
+  if (!admin) return;
+
+  const cleared = communications.clearChannel("uncommon");
+
+  res.send(`Cleared ${cleared} uncommon discovery announcements.`);
+});
+
+app.get("/cleartier3", (req, res) => {
+  if (!requireApiKey(req, res)) return;
+
+  const admin = getAdminOrReply(req, res);
+  if (!admin) return;
+
+  const cleared = communications.clearChannel("uncommon");
+
+  res.send(`Cleared ${cleared} uncommon discovery announcements.`);
+});
+
+app.get("/cleartier4", (req, res) => {
+  if (!requireApiKey(req, res)) return;
+
+  const admin = getAdminOrReply(req, res);
+  if (!admin) return;
+
+  const cleared = communications.clearChannel("uncommon");
+
+  res.send(`Cleared ${cleared} uncommon discovery announcements.`);
 });
 
 app.get("/chronicle-command", (req, res) => {

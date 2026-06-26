@@ -6,7 +6,8 @@ function createChronicleService(db) {
     username = null,
     itemId = null,
     bannerId = null,
-    announced = 0
+    announced = 0,
+    channel = "general",
   }) {
     const result = db.prepare(`
       INSERT INTO chronicle_entries (
@@ -16,9 +17,10 @@ function createChronicleService(db) {
         username,
         item_id,
         banner_id,
-        announced
+        announced,
+        channel
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       category,
       title,
@@ -26,7 +28,8 @@ function createChronicleService(db) {
       username,
       itemId,
       bannerId,
-      announced
+      announced,
+      channel
     );
 
     return result.lastInsertRowid;
