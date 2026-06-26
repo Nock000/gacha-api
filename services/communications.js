@@ -21,105 +21,106 @@ function createCommunicationsService({ db, chronicle, itemsById }) {
       mitan: "👸🏻💬"
     };
 
-function queueDiscovery(username, item, bannerId) {
-  const channel = discoveryChannelForTier(item.tier);
-
-  return chronicle.record({
-    category: "first_discovery",
-    channel,
-    title: `First Discovery: ${item.name}`,
-    message: item.display,
-    username,
-    itemId: item.id,
-    bannerId,
-    announced: 0
-  });
-}
-
-function getPendingSummary() {
-  const rows = db.prepare(`
-    SELECT channel, COUNT(*) AS count
-    FROM chronicle_entries
-    WHERE announced = 0
-    GROUP BY channel
-    ORDER BY MIN(created_at) ASC, MIN(id) ASC
-  `).all();
-
-  if (rows.length === 0) {
-    return "No pending Chronicle announcements.";
+    return labels[channel] || channel;
   }
 
-  return rows
-    .map(row => `${labelForChannel(row.channel)} ×${row.count}`)
-    .join(", ");
-}
-function normalizeChannel(input) {
-  const aliases = {
-    common: "common_discovery",
-    uncommon: "uncommon_discovery",
-    rare: "rare_discovery",
-    legendary: "legendary_discovery"
-  };
+  function normalizeChannel(input) {
+    const aliases = {
+      common: "common_discovery",
+      uncommon: "uncommon_discovery",
+      rare: "rare_discovery",
+      legendary: "legendary_discovery"
+    };
 
-  return aliases[input] || input;
-}
-
-function formatAnnouncement(entry) {
-  if (entry.category === "first_discovery") {
-    return `📜 ${entry.username} discovered ${entry.message}.`;
+    return aliases[input] || input;
   }
 
-  return `📜 ${entry.title}: ${entry.message}`;
-}
+  function queueDiscovery(username, item, bannerId) {
+    const channel = discoveryChannelForTier(item.tier);
 
-function announceNext(channelInput) {
-  const channel = normalizeChannel(channelInput || "");
-
-  const entry = db.prepare(`
-    SELECT *
-    FROM chronicle_entries
-    WHERE announced = 0
-      AND channel = ?
-    ORDER BY created_at ASC, id ASC
-    LIMIT 1
-  `).get(channel);
-
-  if (!entry) {
-    return null;
+    return chronicle.record({
+      category: "first_discovery",
+      channel,
+      title: `First Discovery: ${item.name}`,
+      message: item.display,
+      username,
+      itemId: item.id,
+      bannerId,
+      announced: 0
+    });
   }
 
-  db.prepare(`
-    UPDATE chronicle_entries
-    SET announced = 1
-    WHERE id = ?
-  `).run(entry.id);
+  function getPendingSummary() {
+    const rows = db.prepare(`
+      SELECT channel, COUNT(*) AS count
+      FROM chronicle_entries
+      WHERE announced = 0
+      GROUP BY channel
+      ORDER BY MIN(created_at) ASC, MIN(id) ASC
+    `).all();
+
+    if (rows.length === 0) {
+      return "No pending Chronicle announcements.";
+    }
+
+    return rows
+      .map(row => `${labelForChannel(row.channel)} ×${row.count}`)
+      .join(", ");
+  }
+
+  function formatAnnouncement(entry) {
+    if (entry.category === "first_discovery") {
+      return `📜 ${entry.username} discovered ${entry.message}.`;
+    }
+
+    return `📜 ${entry.title}: ${entry.message}`;
+  }
+
+  function announceNext(channelInput) {
+    const channel = normalizeChannel(channelInput || "");
+
+    const entry = db.prepare(`
+      SELECT *
+      FROM chronicle_entries
+      WHERE announced = 0
+        AND channel = ?
+      ORDER BY created_at ASC, id ASC
+      LIMIT 1
+    `).get(channel);
+
+    if (!entry) {
+      return null;
+    }
+
+    db.prepare(`
+      UPDATE chronicle_entries
+      SET announced = 1
+      WHERE id = ?
+    `).run(entry.id);
+
+    return formatAnnouncement(entry);
+  }
 
   function clearChannel(channelInput) {
-  const channel = normalizeChannel(channelInput);
+    const channel = normalizeChannel(channelInput);
 
-  const clearable = [
-    "common_discovery",
-    "uncommon_discovery"
-  ];
+    const clearable = [
+      "common_discovery",
+      "uncommon_discovery"
+    ];
 
-  if (!clearable.includes(channel)) {
-    return null;
-  }
+    if (!clearable.includes(channel)) {
+      return null;
+    }
 
-  const result = db.prepare(`
-    UPDATE chronicle_entries
-    SET announced = 1
-    WHERE announced = 0
-      AND channel = ?
-  `).run(channel);
+    const result = db.prepare(`
+      UPDATE chronicle_entries
+      SET announced = 1
+      WHERE announced = 0
+        AND channel = ?
+    `).run(channel);
 
-  return result.changes;
-}
-
-  return formatAnnouncement(entry);
-}
-
-    return labels[channel] || channel;
+    return result.changes;
   }
 
   return {
@@ -128,7 +129,7 @@ function announceNext(channelInput) {
     queueDiscovery,
     getPendingSummary,
     announceNext,
-    clearchannel
+    clearChannel
   };
 }
 
