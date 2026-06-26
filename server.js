@@ -88,6 +88,27 @@ const communications = createCommunicationsService({
   itemsById: ITEMS_BY_ID
 });
 
+const unchanneledDiscoveries = db.prepare(`
+  SELECT id, item_id
+  FROM chronicle_entries
+  WHERE category = 'first_discovery'
+    AND channel = 'general'
+`).all();
+
+for (const entry of unchanneledDiscoveries) {
+  const item = ITEMS_BY_ID[entry.item_id];
+
+  if (!item) continue;
+
+  const channel = communications.discoveryChannelForTier(item.tier);
+
+  db.prepare(`
+    UPDATE chronicle_entries
+    SET channel = ?
+    WHERE id = ?
+  `).run(channel, entry.id);
+}
+
 db.prepare(`
   CREATE TABLE IF NOT EXISTS pulls (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
