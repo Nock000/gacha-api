@@ -1008,7 +1008,7 @@ app.get("/announce", (req, res) => {
   const admin = getAdminOrReply(req, res);
   if (!admin) return;
 
-  const channel = req.query.channel;
+  const channel = req.query.channel || "common";
 
   const announcement = communications.announceNext(channel);
 
