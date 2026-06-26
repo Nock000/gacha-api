@@ -624,6 +624,15 @@ app.get("/compendium", (req, res) => {
 
   if (!username) return;
 
+app.get("/compendium", (req, res) => {
+  if (!requireApiKey(req, res)) return;
+
+  const username = getUsernameOrReply(req, res);
+
+  if (!username) return;
+
+  const bannerId = getActiveBannerId();
+
   const rows = db.prepare(`
     SELECT
       COALESCE(item_id, item) AS item_id,
@@ -632,14 +641,39 @@ app.get("/compendium", (req, res) => {
       MAX(COALESCE(tier, 0)) AS tier
     FROM pulls
     WHERE username = ?
+      AND banner_id = ?
     GROUP BY COALESCE(item_id, item)
-  `).all(username);
+  `).all(username, bannerId);
 
   if (rows.length === 0) {
     return res.send(
-      `@${username} has no discoveries yet.`
+      `@${username} has no ${BANNERS[bannerId].name} discoveries yet.`
     );
   }
+
+  rows.sort((a, b) => {
+    const tierDifference = a.tier - b.tier;
+
+    if (tierDifference !== 0) {
+      return tierDifference;
+    }
+
+    const aOrder = ITEMS_BY_ID[a.item_id]?.order ?? 9999;
+    const bOrder = ITEMS_BY_ID[b.item_id]?.order ?? 9999;
+
+    return aOrder - bOrder;
+  });
+
+  const collection = rows
+    .map(row =>
+      `${itemCompact(row.item_id, row.item)}x${row.count}`
+    )
+    .join(", ");
+
+  res.send(
+    `@${username} ${BANNERS[bannerId].name} Compendium: ${collection}`
+  );
+});
 
   rows.sort((a, b) => {
     const tierDifference = a.tier - b.tier;
@@ -876,24 +910,22 @@ app.get("/hypeon", (req, res) => {
   if (!requireApiKey(req, res)) return;
 
   const username = getUsernameOrReply(req, res);
-if (!username) return;
+  if (!username) return;
 
-if (!canModerate(req, username)) {
-  return res.send("Moderator access required.");
-}
+  if (!canModerate(req, username)) {
+    return res.send("Moderator access required.");
+  }
+
+  if (isHypeActive()) {
+    return res.send("Hype mode is already active.");
+  }
 
   const expiresAt = Date.now() + 30 * 60 * 1000;
 
-if (isHypeActive()) {
-  return res.send("Hype mode is already active.");
-}
+  setSetting("hype_mode", "on");
+  setSetting("hype_expires_at", String(expiresAt));
 
-const expiresAt = Date.now() + 30 * 60 * 1000;
-
-setSetting("hype_mode", "on");
-setSetting("hype_expires_at", String(expiresAt));
-
-res.send("Hype mode enabled for 30 minutes.");
+  res.send("Hype mode enabled for 30 minutes.");
 });
 
 app.get("/hypeoff", (req, res) => {
