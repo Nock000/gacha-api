@@ -56,6 +56,22 @@ function isAdmin(username) {
     ADMINS.includes(username.toLowerCase());
 }
 
+function isModerator(req) {
+  const badges = (req.query.badges || "").toLowerCase();
+  const mod = (req.query.mod || "").toLowerCase();
+
+  return (
+    badges.includes("moderator") ||
+    badges.includes("broadcaster") ||
+    mod === "1" ||
+    mod === "true"
+  );
+}
+
+function canModerate(req, username) {
+  return isAdmin(username) || isModerator(req);
+}
+
 const cooldowns = {};
 
 function onCooldown(username, command, cooldownMs) {
@@ -847,8 +863,12 @@ if (admin !== "inanks000") {
 app.get("/hypeon", (req, res) => {
   if (!requireApiKey(req, res)) return;
 
-  const admin = getAdminOrReply(req, res);
-  if (!admin) return;
+  const username = getUsernameOrReply(req, res);
+if (!username) return;
+
+if (!canModerate(req, username)) {
+  return res.send("Moderator access required.");
+}
 
   setSetting("hype_mode", "on");
 
@@ -858,8 +878,12 @@ app.get("/hypeon", (req, res) => {
 app.get("/hypeoff", (req, res) => {
   if (!requireApiKey(req, res)) return;
 
-  const admin = getAdminOrReply(req, res);
-  if (!admin) return;
+  const username = getUsernameOrReply(req, res);
+if (!username) return;
+
+if (!canModerate(req, username)) {
+  return res.send("Moderator access required.");
+}
 
   setSetting("hype_mode", "off");
 
@@ -891,8 +915,12 @@ app.get("/developeroff", (req, res) => {
 app.get("/gachapause", (req, res) => {
   if (!requireApiKey(req, res)) return;
 
-  const admin = getAdminOrReply(req, res);
-  if (!admin) return;
+  const username = getUsernameOrReply(req, res);
+if (!username) return;
+
+if (!canModerate(req, username)) {
+  return res.send("Moderator access required.");
+}
 
   setSetting("gacha_paused", "on");
 
@@ -902,8 +930,12 @@ app.get("/gachapause", (req, res) => {
 app.get("/gacharesume", (req, res) => {
   if (!requireApiKey(req, res)) return;
 
-  const admin = getAdminOrReply(req, res);
-  if (!admin) return;
+  const username = getUsernameOrReply(req, res);
+if (!username) return;
+
+if (!canModerate(req, username)) {
+  return res.send("Moderator access required.");
+}
 
   setSetting("gacha_paused", "off");
 
