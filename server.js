@@ -308,7 +308,19 @@ function getActiveBannerId() {
 }
 
 function isHypeActive() {
-  return getSetting("hype_mode") === "on";
+  if (getSetting("hype_mode") !== "on") {
+    return false;
+  }
+
+  const expiresAt = Number(getSetting("hype_expires_at") || 0);
+
+  if (expiresAt && Date.now() > expiresAt) {
+    setSetting("hype_mode", "off");
+    setSetting("hype_expires_at", "0");
+    return false;
+  }
+
+  return true;
 }
 
 function isDeveloperModeActive(username) {
@@ -870,9 +882,18 @@ if (!canModerate(req, username)) {
   return res.send("Moderator access required.");
 }
 
-  setSetting("hype_mode", "on");
+  const expiresAt = Date.now() + 30 * 60 * 1000;
 
- res.send("Hype mode enabled.");
+if (isHypeActive()) {
+  return res.send("Hype mode is already active.");
+}
+
+const expiresAt = Date.now() + 30 * 60 * 1000;
+
+setSetting("hype_mode", "on");
+setSetting("hype_expires_at", String(expiresAt));
+
+res.send("Hype mode enabled for 30 minutes.");
 });
 
 app.get("/hypeoff", (req, res) => {
@@ -885,9 +906,14 @@ if (!canModerate(req, username)) {
   return res.send("Moderator access required.");
 }
 
-  setSetting("hype_mode", "off");
+  if (!isHypeActive()) {
+  return res.send("Hype mode is already inactive.");
+}
 
-  res.send("Hype mode disabled.");
+setSetting("hype_mode", "off");
+setSetting("hype_expires_at", "0");
+
+res.send("Hype mode disabled.");
 });
 
 app.get("/developeron", (req, res) => {
@@ -896,9 +922,13 @@ app.get("/developeron", (req, res) => {
   const admin = getAdminOrReply(req, res);
   if (!admin) return;
 
-  setSetting("developer_mode_inanks000", "on");
+  if (getSetting("developer_mode_inanks000") === "on") {
+  return res.send("Developer mode is already enabled.");
+}
 
-  res.send("Developer mode enabled.");
+setSetting("developer_mode_inanks000", "on");
+
+res.send("Developer mode enabled.");
 });
 
 app.get("/developeroff", (req, res) => {
@@ -907,9 +937,13 @@ app.get("/developeroff", (req, res) => {
   const admin = getAdminOrReply(req, res);
   if (!admin) return;
 
-  setSetting("developer_mode_inanks000", "off");
+  if (getSetting("developer_mode_inanks000") !== "on") {
+  return res.send("Developer mode is already disabled.");
+}
 
-  res.send("Developer mode disabled.");
+setSetting("developer_mode_inanks000", "off");
+
+res.send("Developer mode disabled.");
 });
 
 app.get("/gachapause", (req, res) => {
@@ -922,9 +956,13 @@ if (!canModerate(req, username)) {
   return res.send("Moderator access required.");
 }
 
-  setSetting("gacha_paused", "on");
+  if (isGachaPaused()) {
+  return res.send("Gacha is already paused.");
+}
 
-  res.send("Gacha paused.");
+setSetting("gacha_paused", "on");
+
+res.send("Gacha paused.");
 });
 
 app.get("/gacharesume", (req, res) => {
@@ -937,9 +975,13 @@ if (!canModerate(req, username)) {
   return res.send("Moderator access required.");
 }
 
-  setSetting("gacha_paused", "off");
+  if (!isGachaPaused()) {
+  return res.send("Gacha is already active.");
+}
 
-  res.send("Gacha resumed.");
+setSetting("gacha_paused", "off");
+
+res.send("Gacha resumed.");
 });
 
 app.get("/chronicle", (req, res) => {
