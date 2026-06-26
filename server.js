@@ -624,13 +624,6 @@ app.get("/compendium", (req, res) => {
 
   if (!username) return;
 
-app.get("/compendium", (req, res) => {
-  if (!requireApiKey(req, res)) return;
-
-  const username = getUsernameOrReply(req, res);
-
-  if (!username) return;
-
   const bannerId = getActiveBannerId();
 
   const rows = db.prepare(`
@@ -673,28 +666,6 @@ app.get("/compendium", (req, res) => {
   res.send(
     `@${username} ${BANNERS[bannerId].name} Compendium: ${collection}`
   );
-});
-
-  rows.sort((a, b) => {
-    const tierDifference = a.tier - b.tier;
-
-    if (tierDifference !== 0) {
-      return tierDifference;
-    }
-
-    const aOrder = ITEMS_BY_ID[a.item_id]?.order ?? 9999;
-    const bOrder = ITEMS_BY_ID[b.item_id]?.order ?? 9999;
-
-    return aOrder - bOrder;
-  });
-
-  const collection = rows
-    .map(row =>
-      `${itemCompact(row.item_id, row.item)}x${row.count}`
-    )
-    .join(", ");
-
-  res.send(`@${username}: ${collection}`);
 });
 
 app.get("/showcase", (req, res) => {
