@@ -801,7 +801,7 @@ app.get("/banner", (req, res) => {
 
 });
 
-
+!addcom !odds $(urlfetch https://gacha-api-production.up.railway.app/odds?key=MISATO)
 
 app.get("/setbanner", (req, res) => {
   if (!requireApiKey(req, res)) return;
